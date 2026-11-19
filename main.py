@@ -63,10 +63,17 @@ def main() -> int:
     out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
     os.makedirs(out_dir, exist_ok=True)
     out_path = os.path.join(out_dir, "entry.png")
+    digest = hashlib.sha256(data).hexdigest()
     with open(out_path, "wb") as fh:
         fh.write(data)
 
-    digest = hashlib.sha256(data).hexdigest()
+    # Read the written file back and compare digests, so a short or
+    # corrupted write fails loudly here instead of at judging time.
+    with open(out_path, "rb") as fh:
+        written = fh.read()
+    if hashlib.sha256(written).hexdigest() != digest:
+        raise SystemExit(f"verification failed: {out_path} does not match poster.png")
+
     print(f"wrote {out_path}: {len(data)} bytes, {width}x{height}, sha256 {digest}")
     return 0
 
